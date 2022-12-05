@@ -1,0 +1,10 @@
+#include "PrettyPostProcess.ush"
+
+void RescalePS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float4 OutColor : SV_Target0)
+{
+    float2 UV = UVAndScreenPos.xy * InputViewportSize;
+    OutColor.rgb = Texture2DSample(InputTexture, InputSampler, UV).rgb;
+    OutColor.a = 0;
+}

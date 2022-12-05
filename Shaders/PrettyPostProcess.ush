@@ -1,0 +1,26 @@
+#define SCENE_TEXTURES_DISABLED 1
+
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Private/ScreenPass.ush"
+#include "/Engine/Private/PostProcessCommon.ush"
+
+Texture2D InputTexture;
+SamplerState InputSampler;
+float2 InputViewportSize;
+
+float2 FisheyeUV(float2 UV, float Compression, float Zoom)
+{
+    float2 NegPosUV = (2.0f * UV - 1.0f);
+
+    float Scale = Compression * atan(1.0f / Compression);
+    float RadiusDistance = length(NegPosUV) * Scale;
+    float RadiusDirection = Compression * tan(RadiusDistance / Compression) * Zoom;
+    float Phi = atan2(NegPosUV.y, NegPosUV.x);
+
+    float2 NewUV = float2(RadiusDirection * cos(Phi) + 1.0,
+                            RadiusDirection * sin(Phi) + 1.0);
+    NewUV = NewUV / 2.0;
+
+    return NewUV;
+}

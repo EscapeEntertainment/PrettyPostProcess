@@ -1,0 +1,80 @@
+#include "PrettyPostProcess.ush"
+
+float4 GhostColors[8];
+// temporary evil hack
+float4 GhostScales[8];
+float Intensity;
+float ChromaShift;
+float Compression;
+
+// Starburst
+Texture2D StarburstTexture;
+SamplerState StarburstSampler;
+float2 InputScreenSize;
+
+// for 5.1, GhostScales[i] replaced with GhostScales[i].r due to SHADER_PARAMETER_SCALAR_ARRAY converts float to FVector4f for whatever reason
+
+void GhostsPS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float4 OutColor : SV_Target0)
+{
+    float2 UV = UVAndScreenPos.xy;
+    float3 Color = float3(0.0f, 0.0f, 0.0f);
+
+    for (int i = 0; i < 8; i++)
+    {
+        // Skip ghost if size is basically 0
+        if (abs(GhostColors[i].a * GhostScales[i].r) > 0.0001f)
+        {
+            float2 NewUV = (UV - 0.5f) * GhostScales[i].r;
+
+            // Local mask
+            float DistanceMask = 1.0f - distance(float2(0.0f, 0.0f), NewUV);
+            float Mask = smoothstep(0.5f, 0.9f, DistanceMask);
+            float Mask2 = smoothstep(0.75f, 1.0f, DistanceMask) * 0.95f + 0.05f;
+            
+            Color.r += Texture2DSample(InputTexture, InputSampler, NewUV * (1.0f + ChromaShift) + 0.5f).r
+                    * GhostColors[i].r
+                    * Mask * Mask2;
+            
+            Color.g += Texture2DSample(InputTexture, InputSampler, NewUV + 0.5f).g
+                    * GhostColors[i].g
+                    * Mask * Mask2;
+            
+            Color.b += Texture2DSample(InputTexture, InputSampler, NewUV * (1.0f - ChromaShift) + 0.5f).b
+                    * GhostColors[i].b
+                    * Mask * Mask2;
+        }
+    }
+
+    float2 ScreenPos = UVAndScreenPos.zw;
+    float ScreenborderMask = DiscMask(ScreenPos * 0.9f);
+
+	// Aspect ratio correction (stretch UV to fit 1:1 aspect ratio)
+	float AspectRatio = InputScreenSize.x / InputScreenSize.y;
+
+    // UVs
+	float2 SquareUV = UV;
+	float2 CenterPoint = float2(0.5f, 0.5f);
+	
+	if (AspectRatio > 1.0f) // Landscape
+	{
+		SquareUV = float2(UVAndScreenPos.x, (UVAndScreenPos.y - 0.5f) / AspectRatio + 0.5f);
+	}
+	else if (AspectRatio < 1.0f) // Portrait
+	{
+		SquareUV = float2((UVAndScreenPos.x - 0.5f) * AspectRatio + 0.5f, UVAndScreenPos.y);
+	}
+	
+	// Starburst
+	float2 StarburstUV = float2(
+		acos((UV.x - CenterPoint.x) / distance(UV, CenterPoint)) * 2.0,
+		0.0f
+	);
+	float3 Starburst = saturate(Texture2DSample(StarburstTexture, StarburstSampler, StarburstUV).rgb - (1.0f - smoothstep(0.1f, 0.3f, distance(UV, CenterPoint))));
+	
+    OutColor.rgb = Color * ScreenborderMask * (Intensity / 100.f) / 10.0f;
+	OutColor.rgb *= 1.0f - (Starburst * 0.3f);
+
+    OutColor.a = 0;
+}

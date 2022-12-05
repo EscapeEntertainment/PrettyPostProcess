@@ -1,0 +1,72 @@
+#include "PrettyPostProcess.ush"
+
+// Fisheye moved to the master USH file
+
+float Width;
+float Mask;
+float Compression;
+float Intensity;
+float ChromaShift;
+float2 InputScreenSize;
+
+// Starburst
+Texture2D StarburstTexture;
+SamplerState StarburstSampler;
+
+void HaloPS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float3 OutColor : SV_Target0)
+{
+    const float2 CenterPoint = float2(0.5f, 0.5f);
+
+	// Aspect ratio correction (stretch UV to fit 1:1 aspect ratio)
+	float AspectRatio = InputScreenSize.x / InputScreenSize.y;
+
+    // UVs
+	float2 UV = UVAndScreenPos.xy;
+	
+	if (AspectRatio > 1.0f) // Landscape
+	{
+		UV = float2(UVAndScreenPos.x, (UVAndScreenPos.y - 0.5f) / AspectRatio + 0.5f);
+	}
+	else if (AspectRatio < 1.0f) // Portrait
+	{
+		UV = float2((UVAndScreenPos.x - 0.5f) * AspectRatio + 0.5f, UVAndScreenPos.y);
+	}
+	
+    float2 FishUV = FisheyeUV(UV, Compression, 1.0f);
+
+    // Distortion vector
+    float2 HaloVector = normalize(CenterPoint - UV) * Width;
+
+    // Halo mask
+    float HaloMask = distance(UV, CenterPoint);
+    HaloMask = saturate(HaloMask * 2.0f);
+    HaloMask = smoothstep(Mask, 1.0f, HaloMask);
+
+    // Screen border mask
+    float2 ScreenPos = UVAndScreenPos.zw;
+    float ScreenborderMask = DiscMask(ScreenPos);
+    ScreenborderMask *= DiscMask(ScreenPos * 0.8f);
+    ScreenborderMask = ScreenborderMask * 0.95 + 0.05; // Scale range
+
+    // Chroma offset
+    float2 UVr = (FishUV - CenterPoint) * (1.0f + ChromaShift) + CenterPoint + HaloVector;
+    float2 UVg = FishUV + HaloVector;
+    float2 UVb = (FishUV - CenterPoint) * (1.0f - ChromaShift) + CenterPoint + HaloVector;
+	
+	// Starburst
+	float2 StarburstUV = float2(
+		acos((UV.x - CenterPoint.x) / distance(UV, CenterPoint)) * 2.0,
+		0.0f
+	);
+	float3 Starburst = saturate(Texture2DSample(StarburstTexture, StarburstSampler, StarburstUV).rgb);
+
+    // Sampling
+    OutColor.r = Texture2DSample(InputTexture, InputSampler, UVr).r;
+    OutColor.g = Texture2DSample(InputTexture, InputSampler, UVg).g;
+    OutColor.b = Texture2DSample(InputTexture, InputSampler, UVb).b;
+
+    OutColor.rgb *= ScreenborderMask * HaloMask * Intensity;
+	OutColor.rgb *= 1.0f - Starburst;
+}

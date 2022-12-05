@@ -1,0 +1,102 @@
+#include "PrettyPostProcess.ush"
+
+// Common
+int3 MixPass;
+float2 InputScreenSize;
+
+// Bloom
+Texture2D BloomTexture;
+float BloomIntensity;
+
+// Glare
+Texture2D GlareTexture;
+float2 PixelSize;
+
+// Flare
+float FlareIntensity;
+float4 FlareTint;
+Texture2D GradientTexture;
+SamplerState GradientSampler;
+
+void MixPS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float4 OutColor : SV_Target0)
+{
+    float2 UV = UVAndScreenPos.xy;
+    OutColor.rgb = float3(0.0f, 0.0f, 0.0f);
+    OutColor.a = 0;
+
+    //---------------------------------------
+    // Add Bloom
+    //---------------------------------------
+    if (MixPass.x)
+    {
+        OutColor.rgb += Texture2DSample(BloomTexture, InputSampler, UV).rgb * BloomIntensity;
+    }
+    
+    //---------------------------------------
+    // Add Flares, Glares mixed with Tint/Gradient
+    //---------------------------------------
+    float3 Flares = float3(0.0f, 0.0f, 0.0f);
+
+    // Flares
+    if (MixPass.y)
+    {
+        Flares = Texture2DSample(InputTexture, InputSampler, UV).rgb;
+    }
+
+    // Glares
+    if (MixPass.z)
+    {
+        const float2 Coords[4] =
+        {
+            float2(-1.0f, 1.0f),
+            float2(1.0f, 1.0f),
+            float2(-1.0f, -1.0f),
+            float2(1.0f, -1.0f)
+        };
+
+        float3 GlareColor = float3(0.0f, 0.0f, 0.0f);
+
+        UNROLL
+
+        for (int i = 0; i < 4; i++)
+        {
+            float2 OffsetUV = UV + PixelSize * Coords[i];
+            GlareColor.rgb += 0.25f * Texture2DSample(GlareTexture, InputSampler, OffsetUV).rgb;
+        }
+
+        Flares += GlareColor;
+    }
+	
+	// Aspect ratio correction for gradient and starburst
+	float AspectRatio = InputScreenSize.x / InputScreenSize.y;
+	float2 SquareUV = UV;
+	
+	if (AspectRatio > 1.0f) // Landscape
+	{
+		SquareUV = float2(UV.x, (UV.y - 0.5f) / AspectRatio + 0.5f);
+	}
+	else if (AspectRatio < 1.0f) // Portrait
+	{
+		SquareUV = float2((UV.x - 0.5f) * AspectRatio + 0.5f, UV.y);
+	}
+	
+    // Colored gradient
+    const float2 Center = float2(0.5f, 0.5f);
+    float2 GradientUV = float2(
+        saturate(distance(SquareUV, Center) * 2.0f),
+        0.0f
+    );
+	
+	
+
+    float3 Gradient = Texture2DSample(GradientTexture, GradientSampler, GradientUV).rgb;
+
+    Flares *= Gradient * FlareTint.rgb * FlareIntensity;
+
+    //---------------------------------------
+    // Add Glare and Flares to final mix
+    //---------------------------------------
+    OutColor.rgb += Flares;
+}

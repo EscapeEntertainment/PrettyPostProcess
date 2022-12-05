@@ -1,0 +1,25 @@
+{
+	"FileVersion": 3,
+	"Version": 4,
+	"VersionName": "2.2.0",
+	"FriendlyName": "Pretty Post Process",
+	"Description": "Provides better looking post process in Unreal Engine. Requires some engine modifications for delegate functions.",
+	"Category": "Rendering",
+	"CreatedBy": "Escape Entertainment & Froyok",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"EnabledByDefault": true,
+	"Modules": [
+		{
+			"Name": "PrettyPostProcess",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit"
+		}
+	]
+}

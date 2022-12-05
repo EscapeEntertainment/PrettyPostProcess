@@ -1,0 +1,52 @@
+#include "PrettyPostProcess.ush"
+
+float2 InputSize;
+
+float3 Downsample(Texture2D Texture, SamplerState Sampler, float2 UV, float2 PixelSize)
+{
+    const float2 Coords[13] =
+    {
+        float2(-1.0f, 1.0f), float2(1.0f, 1.0f),
+        float2(-1.0f, -1.0f), float2(1.0f, -1.0f),
+
+        float2(-2.0f, 2.0f), float2(0.0f, 2.0f), float2(2.0f, 2.0f),
+        float2(-2.0f, 0.0f), float2(0.0f, 0.0f), float2(2.0f, 0.0f),
+        float2(-2.0f, -2.0f), float2(0.0f, -2.0f), float2(2.0f, -2.0f)
+    };
+
+
+    const float Weights[13] =
+    {
+        // 4 samples
+        // (1 / 4) * 0.5f = 0.125f
+        0.125f, 0.125f,
+        0.125f, 0.125f,
+
+        // 9 samples
+        // (1 / 9) * 0.5f
+        0.0555555f, 0.0555555f, 0.0555555f,
+        0.0555555f, 0.0555555f, 0.0555555f,
+        0.0555555f, 0.0555555f, 0.0555555f
+    };
+
+    float3 OutColor = float3(0.0f, 0.0f, 0.0f);
+
+    UNROLL
+
+    for (int i = 0; i < 13; i++)
+    {
+        float2 CurrentUV = UV + Coords[i] * PixelSize;
+        OutColor += Weights[i] * Texture2DSample(Texture, Sampler, CurrentUV).rgb;
+    }
+
+    return OutColor;
+}
+
+void DownsamplePS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float3 OutColor : SV_Target0)
+{
+    float2 InPixelSize = (1.0f / InputSize) * 0.5;
+    float2 UV = UVAndScreenPos.xy;
+    OutColor.rgb = Downsample(InputTexture, InputSampler, UV, InPixelSize);
+}

@@ -1,0 +1,57 @@
+#include "PrettyPostProcess.ush"
+
+float2 BufferSize;
+
+void KawaseBlurDownsamplePS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float4 OutColor : SV_Target0)
+{
+    float2 UV = UVAndScreenPos.xy;
+    float2 HalfPixel = (1.0f / BufferSize) * 0.5f;
+
+    float2 DirDiag1 = float2(-HalfPixel.x, HalfPixel.y); // Top left
+    float2 DirDiag2 = float2(HalfPixel.x, HalfPixel.y); // Top right
+    float2 DirDiag3 = float2(HalfPixel.x, -HalfPixel.y); // Bottom right
+    float2 DirDiag4 = float2(-HalfPixel.x, -HalfPixel.y); // Bottom left
+
+    float3 Color = Texture2DSample(InputTexture, InputSampler, UV).rgb * 4.0f;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirDiag1).rgb;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirDiag2).rgb;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirDiag3).rgb;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirDiag4).rgb;
+
+    OutColor.rgb = Color / 8.0f;
+    OutColor.a = 0.0f;
+}
+
+void KawaseBlurUpsamplePS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float4 OutColor : SV_Target0)
+{
+    float2 UV = UVAndScreenPos.xy;
+    float2 HalfPixel = (1.0f / BufferSize) * 0.5f;
+
+    float2 DirDiag1 = float2(-HalfPixel.x, HalfPixel.y); // Top left
+    float2 DirDiag2 = float2(HalfPixel.x, HalfPixel.y); // Top right
+    float2 DirDiag3 = float2(HalfPixel.x, -HalfPixel.y); // Bottom right
+    float2 DirDiag4 = float2(-HalfPixel.x, -HalfPixel.y); // Bottom left
+    float2 DirAxis1 = float2(-HalfPixel.x, 0.0f); // Left
+    float2 DirAxis2 = float2(HalfPixel.x, 0.0f); // Right
+    float2 DirAxis3 = float2(0.0f, HalfPixel.y); // Top
+    float2 DirAxis4 = float2(0.0f, -HalfPixel.y); // Bottom
+
+    float3 Color = float3(0.0f, 0.0f, 0.0f);
+
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirDiag1).rgb;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirDiag2).rgb;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirDiag3).rgb;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirDiag4).rgb;
+
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirAxis1).rgb * 2.0f;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirAxis2).rgb * 2.0f;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirAxis3).rgb * 2.0f;
+    Color += Texture2DSample(InputTexture, InputSampler, UV + DirAxis4).rgb * 2.0f;
+
+    OutColor.rgb = Color / 12.0f;
+    OutColor.a = 0.0f;
+}

@@ -1,0 +1,47 @@
+#include "PrettyPostProcess.ush"
+
+float2 InputSize;
+Texture2D PreviousTexture;
+float Radius;
+
+float3 Upsample(Texture2D Texture, SamplerState Sampler, float2 UV, float2 PixelSize)
+{
+    const float2 Coords[9] =
+    {
+        float2(-1.0f, 1.0f), float2(0.0f, 1.0f), float2(1.0f, 1.0f),
+        float2(-1.0f, 0.0f), float2(0.0f, 0.0f), float2(1.0f, 0.0f),
+        float2(-1.0f, -1.0f), float2(0.0f, -1.0f), float2(1.0f, -1.0f)
+    };
+
+    const float Weights[9] =
+    {
+        0.0625f, 0.125f, 0.0625f,
+        0.125f, 0.25f, 0.125f,
+        0.0625f, 0.125f, 0.0625f
+    };
+
+    float3 Color = float3(0.0f, 0.0f, 0.0f);
+
+    UNROLL
+
+    for (int i = 0; i < 9; i++)
+    {
+        float2 CurrentUV = UV + Coords[i] * PixelSize;
+        Color += Weights[i] * Texture2DSampleLevel(Texture, Sampler, CurrentUV, 0).rgb;
+    }
+
+    return Color;
+}
+
+void UpsampleCombinePS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float3 OutColor : SV_Target0)
+{
+    float2 InPixelSize = 1.0f / InputSize;
+    float2 UV = UVAndScreenPos.xy;
+
+    float3 CurrentColor = Texture2DSampleLevel(InputTexture, InputSampler, UV, 0).rgb;
+    float3 PreviousColor = Upsample(PreviousTexture, InputSampler, UV, InPixelSize);
+
+    OutColor.rgb = lerp(CurrentColor, PreviousColor, Radius);
+}
