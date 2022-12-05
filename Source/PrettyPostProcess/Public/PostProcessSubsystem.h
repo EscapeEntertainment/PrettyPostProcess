@@ -92,9 +92,6 @@ private:
     UPROPERTY(Transient)
     TObjectPtr<UPostProcessDataAsset> PostProcessDataAsset;
 
-	UPROPERTY(Transient)
-	TObjectPtr<class UPostProcessDevSettings> Settings;
-
     FRDGTextureRef RenderGhosts(
         FRDGBuilder& GraphBuilder,
         const FString& PassName,
