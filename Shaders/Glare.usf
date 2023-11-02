@@ -3,8 +3,6 @@
 uint2 TileCount;
 float GlareIntensity;
 float4 GlareScales;
-// Convert Vector4 GlareScales to scalar array to maintain the loop function
-float GlareScalesArray[3];
 float4 GlareTint;
 float2 BufferSize;
 float4 PixelSize;
@@ -200,6 +198,9 @@ void GlareGS(
             float2(1.0f, 1.0f),
             float2(0.0f, 1.0f)
         };
+        
+        // Convert Vector4 GlareScales to scalar array to maintain the loop function
+        float GlareScalesArray[3] = { 0.0f, 0.0f, 0.0f };
 
 		GlareScalesArray[0] = GlareScales.r;
 		GlareScalesArray[1] = GlareScales.g;

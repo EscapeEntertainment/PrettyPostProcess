@@ -8,6 +8,7 @@
 #include "SystemTextures.h"
 #include "ScreenPass.h"
 #include "PostProcess/PostProcessing.h"
+#include "PostProcess/DrawRectangle.h"
 
 // defines for UE4 single FP compatibility
 #if ENGINE_MAJOR_VERSION >= 5
@@ -378,7 +379,7 @@ void UPostProcessSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     // Setup delegate
     //--------------------------------
     FPP_CustomBloomFlare::FDelegate Delegate = FPP_CustomBloomFlare::FDelegate::CreateLambda(
-        [=](FRDGBuilder& GraphBuilder, const FViewInfo& View, const FScreenPassTexture& SceneColor, FScreenPassTexture& Output)
+        [=, this](FRDGBuilder& GraphBuilder, const FViewInfo& View, const FScreenPassTexture& SceneColor, FScreenPassTexture& Output)
         {
             Render(GraphBuilder, View, SceneColor, Output);
         });
@@ -463,8 +464,9 @@ inline void DrawShaderPass(
                 *PassParameters
             );
 
-            DrawRectangle(
+            UE::Renderer::PostProcess::DrawRectangle(
                 RHICmdList,                             // FRHICommandList
+                PipelineState.VertexShader,             // const TShaderRefBase VertexShader
                 0.0f, 0.0f,                             // float X, float Y
                 Viewport.Width(), Viewport.Height(),    // float SizeX, float SizeY
                 Viewport.Min.X, Viewport.Min.Y,         // float U, float V
@@ -472,9 +474,9 @@ inline void DrawShaderPass(
                 Viewport.Height(),                      // float SizeV
                 Viewport.Size(),                        // FIntPoint TargetSize
                 Viewport.Size(),                        // FIntPoint TextureSize
-                PipelineState.VertexShader,             // const TShaderRefBase VertexShader
                 EDrawRectangleFlags::EDRF_Default       // EDrawRectangleFlags Flags
             );
+
         });
 }
 
