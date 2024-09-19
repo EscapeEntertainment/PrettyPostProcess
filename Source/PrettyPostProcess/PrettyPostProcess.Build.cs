@@ -7,8 +7,8 @@ public class PrettyPostProcess : ModuleRules
 	public PrettyPostProcess(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
-		PublicIncludePaths.AddRange(
+
+        PublicIncludePaths.AddRange(
 			new string[] {
 				// ... add public include paths required here ...
 			}
@@ -43,7 +43,7 @@ public class PrettyPostProcess : ModuleRules
 				"Engine",
 				"DeveloperSettings",
 				"Slate",
-				"SlateCore",
+				"SlateCore"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

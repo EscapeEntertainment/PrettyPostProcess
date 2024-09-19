@@ -7,8 +7,12 @@
 #include "RenderGraph.h"
 #include "SystemTextures.h"
 #include "ScreenPass.h"
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 4
+#include "DataDrivenShaderPlatformInfo.h"
+#endif
 #include "PostProcess/PostProcessing.h"
 #include "PostProcess/DrawRectangle.h"
+#include "PostProcess/PostProcessLensFlares.h"
 
 // defines for UE4 single FP compatibility
 #if ENGINE_MAJOR_VERSION >= 5
@@ -202,6 +206,30 @@ namespace
         }
     };
     IMPLEMENT_GLOBAL_SHADER(FLensFlareGhostsPS, "/CustomShaders/Ghosts.usf", "GhostsPS", SF_Pixel);
+
+    // Ghost shader
+    class FLensFlareStarburstPS : public FGlobalShader
+    {
+    public:
+        DECLARE_GLOBAL_SHADER(FLensFlareStarburstPS);
+        SHADER_USE_PARAMETER_STRUCT(FLensFlareStarburstPS, FGlobalShader);
+
+        BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+        SHADER_PARAMETER_STRUCT_INCLUDE(FCustomPostProcessParameters, Pass)
+        SHADER_PARAMETER_SAMPLER(SamplerState, InputSampler)
+		SHADER_PARAMETER(VECTOR2, InputScreenSize)
+		SHADER_PARAMETER_TEXTURE(Texture2D, StarburstTexture)
+		SHADER_PARAMETER_SAMPLER(SamplerState, StarburstSampler)
+        SHADER_PARAMETER(float, StarburstIntensity)
+        SHADER_PARAMETER(float, StarburstOffset)
+        END_SHADER_PARAMETER_STRUCT()
+
+        static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+        {
+            return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+        }
+    };
+    IMPLEMENT_GLOBAL_SHADER(FLensFlareStarburstPS, "/CustomShaders/Starburst.usf", "StarburstPS", SF_Pixel);
 
     class FLensFlareHaloPS : public FGlobalShader
     {
@@ -783,6 +811,58 @@ FRDGTextureRef UPostProcessSubsystem::RenderGhosts(
     return TargetTexture;
 }
 
+FRDGTextureRef UPostProcessSubsystem::RenderStarburst(
+    FRDGBuilder& GraphBuilder,
+    const FString& PassName,
+    FRDGTextureRef InputTexture,
+    const FViewInfo& View,
+    const FIntRect& Viewport
+)
+{
+    // Shader setup
+    TShaderMapRef<FCustomScreenPassVS>      VertexShader(View.ShaderMap);
+    TShaderMapRef<FLensFlareStarburstPS>    PixelShader(View.ShaderMap);
+
+    // Data setup
+    FRDGTextureRef TargetTexture = nullptr;
+    FRDGTextureRef PreviousBuffer = InputTexture;
+    const FRDGTextureDesc& InputDescription = InputTexture->Desc;
+    FRDGTextureRef Buffer = GraphBuilder.CreateTexture(InputDescription, *PassName);
+
+    FLensFlareStarburstPS::FParameters* PassParameters = GraphBuilder.AllocParameters<FLensFlareStarburstPS::FParameters>();
+    PassParameters->Pass.InputTexture = PreviousBuffer;
+    PassParameters->Pass.RenderTargets[0] = FRenderTargetBinding(Buffer, ERenderTargetLoadAction::ENoAction);
+    PassParameters->InputSampler = BilinearBorderSampler;
+    PassParameters->InputScreenSize = FVector2f(Viewport.Size());
+
+    // Starburst
+    PassParameters->StarburstTexture = GWhiteTexture->TextureRHI;
+    PassParameters->StarburstSampler = BilinearRepeatSampler;
+    PassParameters->StarburstIntensity = PostProcessDataAsset->StarburstIntensity;
+    PassParameters->StarburstOffset = PostProcessDataAsset->StarburstOffset;
+
+    if (PostProcessDataAsset->StarburstNoise != nullptr)
+    {
+        const FTextureRHIRef TextureRHI = PostProcessDataAsset->StarburstNoise->GetResource()->TextureRHI;
+        PassParameters->StarburstTexture = TextureRHI;
+    }
+
+    // Render
+    DrawShaderPass(
+        GraphBuilder,
+        PassName,
+        PassParameters,
+        VertexShader,
+        PixelShader,
+        ClearBlendState,
+        Viewport
+    );
+
+    TargetTexture = Buffer;
+
+    return TargetTexture;
+}
+
 FRDGTextureRef UPostProcessSubsystem::RenderHalo(
     FRDGBuilder& GraphBuilder,
     const FString& PassName,
@@ -1160,7 +1240,15 @@ FScreenPassTexture UPostProcessSubsystem::RenderFlarePass(
         FlareTexture,
         View,
         Size,
-        1
+        PostProcessDataAsset->BlurSteps
+    );
+
+    FlareTexture = RenderStarburst(
+        GraphBuilder,
+        "FlareStarburst",
+        FlareTexture,
+        View,
+        Size
     );
     
     FScreenPassTexture OutputTexture(FlareTexture, Size);
@@ -1336,6 +1424,8 @@ void UPostProcessSubsystem::Render(
             View,
             DownsampleTextureFlare
         );
+
+        
     }
 
     // Glare

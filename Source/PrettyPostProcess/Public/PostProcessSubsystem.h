@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/EngineSubsystem.h"
 #include "PostProcess/PostProcessing.h" // For PostProcess delegate
+#include "PostProcess/PostProcessBloomSetup.h"
 #include "PostProcessSubsystem.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_FourParams(FPP_CustomBloomFlare, FRDGBuilder&, const FViewInfo&, const FScreenPassTexture&, FScreenPassTexture&);
@@ -97,6 +98,14 @@ private:
         const FString& PassName,
         const FViewInfo& View,
         FRDGTextureRef InputTexture,
+        const FIntRect& Viewport
+    );
+
+    FRDGTextureRef RenderStarburst(
+        FRDGBuilder& GraphBuilder,
+        const FString& PassName,
+        FRDGTextureRef InputTexture,
+        const FViewInfo& View,
         const FIntRect& Viewport
     );
 

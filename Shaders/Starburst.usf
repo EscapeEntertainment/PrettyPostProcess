@@ -1,0 +1,46 @@
+#include "PrettyPostProcess.ush"
+
+// Starburst
+Texture2D StarburstTexture;
+SamplerState StarburstSampler;
+float StarburstIntensity;
+float StarburstOffset;
+float2 InputScreenSize;
+
+void StarburstPS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float4 OutColor : SV_Target0)
+{
+    float2 UV = UVAndScreenPos.xy;
+    float3 Color = Texture2DSample(InputTexture, InputSampler, UV).rgb;
+    
+    float2 ScreenPos = UVAndScreenPos.zw;
+    float ScreenborderMask = DiscMask(ScreenPos * 0.9f);
+
+	// Aspect ratio correction (stretch UV to fit 1:1 aspect ratio)
+    float AspectRatio = InputScreenSize.x / InputScreenSize.y;
+
+    // UVs
+    float2 SquareUV = UV;
+    float2 CenterPoint = float2(0.5f, 0.5f);
+	
+    if (AspectRatio > 1.0f) // Landscape
+    {
+        SquareUV = float2(UVAndScreenPos.x, (UVAndScreenPos.y - 0.5f) / AspectRatio + 0.5f);
+    }
+    else if (AspectRatio < 1.0f) // Portrait
+    {
+        SquareUV = float2((UVAndScreenPos.x - 0.5f) * AspectRatio + 0.5f, UVAndScreenPos.y);
+    }
+	
+	// Starburst
+    float2 StarburstUV = float2(
+		acos((UV.x - CenterPoint.x) / distance(UV, CenterPoint)) * 2.0,
+		0.0f
+	);
+    float3 Starburst = saturate(Texture2DSample(StarburstTexture, StarburstSampler, StarburstUV).rgb - (1.0f - smoothstep(0.025f, 0.2f, distance(UV, CenterPoint))));
+	
+    OutColor.rgb = Color;
+    OutColor.rgb *= 1.0f - (Starburst * StarburstIntensity);
+    OutColor.a = 0;
+}

@@ -46,6 +46,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Flare")
 	TObjectPtr<class UTexture2D> StarburstNoise = nullptr;
 
+    /** Blur steps for the ghosts */
+    UPROPERTY(EditAnywhere, Category = "Ghosts", meta = (ClampMin = "0", ClampMax = "8", UIMin = "0", UIMax = "8"))
+    int32 BlurSteps = 2;
+
     /** Compression of the flare ghosts's fisheye distortion. Larger numbers means less distortion */
     UPROPERTY(EditAnywhere, Category = "Ghosts", meta = (UIMin = "0.0", UIMax = "1.0"))
     float GhostCompression = 0.65f;
@@ -54,14 +58,22 @@ public:
     UPROPERTY(EditAnywhere, Category = "Ghosts", meta = (UIMin = "0.0", UIMax = "1.0"))
     float GhostIntensity = 1.0f;
 
+    /** Intensity of the flare starburst filter */
+    UPROPERTY(EditAnywhere, Category = "Ghosts", meta = (UIMin = "0.0", UIMax = "1.0"))
+    float StarburstIntensity = 0.3f;
+
+    /** Offset of the flare starburst filter */
+    UPROPERTY(EditAnywhere, Category = "Ghosts", meta = (UIMin = "0.0", UIMax = "1.0"))
+    float StarburstOffset = 0.0f;
+
     /** Chroma shift amount of the flare ghosts */
     UPROPERTY(EditAnywhere, Category = "Ghosts", meta = (UIMin = "0.0", UIMax = "1.0"))
     float GhostChromaShift = 0.015f;
-
+    
     /** Tint and size of the first flare ghost pass */
     UPROPERTY(EditAnywhere, Category = "Ghosts")
     FLensFlareGhostSettings Ghost1 = { FLinearColor(1.0f, 0.8f, 0.4f, 1.0f), -1.5 };
-
+    
     /** Tint and size of the second flare ghost pass */
     UPROPERTY(EditAnywhere, Category = "Ghosts")
     FLensFlareGhostSettings Ghost2 = { FLinearColor(1.0f, 1.0f, 0.6f, 1.0f),  2.5 };

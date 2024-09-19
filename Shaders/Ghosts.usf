@@ -74,7 +74,7 @@ void GhostsPS(
 	float3 Starburst = saturate(Texture2DSample(StarburstTexture, StarburstSampler, StarburstUV).rgb - (1.0f - smoothstep(0.1f, 0.3f, distance(UV, CenterPoint))));
 	
     OutColor.rgb = Color * ScreenborderMask * (Intensity / 100.f) / 10.0f;
-	OutColor.rgb *= 1.0f - (Starburst * 0.3f);
+	//OutColor.rgb *= 1.0f - (Starburst * 0.3f);
 
     OutColor.a = 0;
 }
