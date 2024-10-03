@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 4,
-	"VersionName": "2.2.0",
+	"VersionName": "2.2.2",
 	"FriendlyName": "Pretty Post Process",
 	"Description": "Provides better looking post process in Unreal Engine. Requires some engine modifications for delegate functions.",
 	"Category": "Rendering",
