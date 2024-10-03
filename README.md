@@ -30,7 +30,7 @@ Once you apply the changes and compile the engine, you can enable the plugin and
 The plugin is mainly controlled with a Data Asset resides in the plugin's Contents folder, named `DA_PostProcess_Default`. This Data Asset contains parameters
 that adjust how the lens flares look.
 
-> **WARNING:** The Data Asset that came with this repo is saved with Unreal Engine 5.1. This will not appear in prior engine versions, and you will have to make
+> **WARNING:** The Data Asset that came with this repo is saved with Unreal Engine 5.4. This will not appear in prior engine versions, and you will have to make
 > one yourself with the exact same name.
 
 ## Console commands
