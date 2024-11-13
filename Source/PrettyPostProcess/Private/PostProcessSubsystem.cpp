@@ -1040,7 +1040,7 @@ FRDGTextureRef UPostProcessSubsystem::RenderGlare(
                 GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
                 GraphicsPSOInit.PrimitiveType = PT_PointList;
 				// TODO: Get StencilRef for this
-                SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
+                SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit, 0);
 
                 SetShaderParameters(RHICmdList, VertexShader, VertexShader.GetVertexShader(), VertexParameters);
                 SetShaderParameters(RHICmdList, GeometryShader, GeometryShader.GetGeometryShader(), GeometryParameters);
