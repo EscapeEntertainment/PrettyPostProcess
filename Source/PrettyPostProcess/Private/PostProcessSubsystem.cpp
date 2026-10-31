@@ -10,6 +10,7 @@
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 4
 #include "DataDrivenShaderPlatformInfo.h"
 #endif
+#include "SceneRendering.h"
 #include "PostProcess/PostProcessing.h"
 #include "PostProcess/DrawRectangle.h"
 #include "PostProcess/PostProcessLensFlares.h"
@@ -393,7 +394,7 @@ TAutoConsoleVariable<int32> CVarRenderGlarePass(
 
 //----------------------------------------------------------
 
-DECLARE_GPU_STAT(PrettyPostProcess)
+DECLARE_GPU_STAT(PrettyPostProcess);
 
 //----------------------------------------------------------
 // Subsystem core functions
@@ -993,6 +994,7 @@ FRDGTextureRef UPostProcessSubsystem::RenderGlare(
         GeometryParameters.GlareScales.X = PostProcessDataAsset->GlareScale.X;
         GeometryParameters.GlareScales.Y = PostProcessDataAsset->GlareScale.Y;
         GeometryParameters.GlareScales.Z = PostProcessDataAsset->GlareScale.Z;
+        GeometryParameters.GlareScales.W = PostProcessDataAsset->GlareScale.W;
         GeometryParameters.GlareDivider = FMath::Max(PostProcessDataAsset->GlareDivider, 0.01f);
 
         // Pixel shader

@@ -133,8 +133,8 @@ float4 ComputePosition(float2 TilePos, float2 UV, float2 Scale, float Angle)
 }
 // This is the main function and maxvertexcount is a required keyword 
 // to indicate how many vertices the Geometry shader will produce.
-// (12 vertices = 3 quads, 4 vertices per quad)
-[maxvertexcount(12)]
+// (16 vertices = 4 quads, 4 vertices per quad)
+[maxvertexcount(16)]
 void GlareGS(
     point FVertexToGeometry Inputs[1],
     inout TriangleStream<FGeometryToPixel> OutStream
@@ -171,19 +171,24 @@ void GlareGS(
 
         // Setup rotation angle
         const float Angle30 = 0.523599f;
-        const float Angle60 = 1.047197f;
-        const float Angle90 = 1.570796f;
-        const float Angle150 = 2.617994f;
+        const float Angle11_25 = 0.196349f;
+        
+        // Angle for 8 blades of the glare. Inspired by a certain game about carjacking.
+        const float Angle22_5 = 0.392699f;
+        const float Angle67_5 = 1.178097f;
+        const float Angle112_5 = 1.963495f;
+        const float Angle157_5 = 2.748893f;
 
         // Additional rotation based on screen position to add 
         // more variety and make the glare rotate with the camera.
-        float AngleOffset = (PointUV.x * 2.0f - 1.0f) * Angle30;
+        float AngleOffset = (PointUV.x * 2.0f - 1.0f) * Angle11_25;
 
-        float AngleBase[3] =
+        float AngleBase[4] =
         {
-            AngleOffset + Angle90,
-            AngleOffset + Angle30, // 90 - 60
-            AngleOffset + Angle150 // 90 + 60
+            AngleOffset + Angle22_5,
+            AngleOffset + Angle67_5,
+            AngleOffset + Angle112_5,
+            AngleOffset + Angle157_5
         };
 
         // Quad UV coordinates of each vertex
@@ -200,14 +205,15 @@ void GlareGS(
         };
         
         // Convert Vector4 GlareScales to scalar array to maintain the loop function
-        float GlareScalesArray[3] = { 0.0f, 0.0f, 0.0f };
+        float GlareScalesArray[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 		GlareScalesArray[0] = GlareScales.r;
 		GlareScalesArray[1] = GlareScales.g;
 		GlareScalesArray[2] = GlareScales.b;
+        GlareScalesArray[3] = GlareScales.a;
 		
-        // Generate 3 quads
-        for (int i = 0; i < 3; i++)
+        // Generate 4 quads
+        for (int i = 0; i < 4; i++)
         {
             // Emit a quad by producing 4 vertices
             if (GlareScalesArray[i].r > 0.0001f)

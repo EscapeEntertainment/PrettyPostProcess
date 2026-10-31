@@ -131,7 +131,7 @@ public:
 
     /** Size of each glare bars */
     UPROPERTY(EditAnywhere, Category = "Glare", meta = (UIMin = "0.0", UIMax = "10.0"))
-    FVector GlareScale = FVector(1.0f, 1.0f, 1.0f);
+    FVector4 GlareScale = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 
     /** Tint of the glare effect */
     UPROPERTY(EditAnywhere, Category = "Glare")

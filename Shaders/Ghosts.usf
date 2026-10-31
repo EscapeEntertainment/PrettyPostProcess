@@ -20,13 +20,35 @@ void GhostsPS(
 {
     float2 UV = UVAndScreenPos.xy;
     float3 Color = float3(0.0f, 0.0f, 0.0f);
+	
+	// Aspect ratio correction (stretch UV to fit 1:1 aspect ratio)
+	float AspectRatio = InputScreenSize.x / InputScreenSize.y;
+
+	// UVs
+	float2 SquareUV = UV;
+	float2 CenterPoint = float2(0.5f, 0.5f);
+	
+	if (AspectRatio > 1.0f) // Landscape
+	{
+		SquareUV = float2(UVAndScreenPos.x, (UVAndScreenPos.y - 0.5f) / AspectRatio + 0.5f);
+	}
+	else if (AspectRatio < 1.0f) // Portrait
+	{
+		SquareUV = float2((UVAndScreenPos.x - 0.5f) * AspectRatio + 0.5f, UVAndScreenPos.y);
+	}
+	
+	// Scale UV by distance from center, creating radial stretching effect
+	float ScaleAlpha = length(SquareUV - CenterPoint);
+	float2 ScaleUV = (UV - 0.5f) * (1.0f - Compression * ScaleAlpha) + 0.5f;
+	
 
     for (int i = 0; i < 8; i++)
     {
         // Skip ghost if size is basically 0
         if (abs(GhostColors[i].a * GhostScales[i].r) > 0.0001f)
         {
-            float2 NewUV = (UV - 0.5f) * GhostScales[i].r;
+            float2 NewUV = (ScaleUV - 0.5f) * GhostScales[i].r;
+        	
 
             // Local mask
             float DistanceMask = 1.0f - distance(float2(0.0f, 0.0f), NewUV);
@@ -49,22 +71,6 @@ void GhostsPS(
 
     float2 ScreenPos = UVAndScreenPos.zw;
     float ScreenborderMask = DiscMask(ScreenPos * 0.9f);
-
-	// Aspect ratio correction (stretch UV to fit 1:1 aspect ratio)
-	float AspectRatio = InputScreenSize.x / InputScreenSize.y;
-
-    // UVs
-	float2 SquareUV = UV;
-	float2 CenterPoint = float2(0.5f, 0.5f);
-	
-	if (AspectRatio > 1.0f) // Landscape
-	{
-		SquareUV = float2(UVAndScreenPos.x, (UVAndScreenPos.y - 0.5f) / AspectRatio + 0.5f);
-	}
-	else if (AspectRatio < 1.0f) // Portrait
-	{
-		SquareUV = float2((UVAndScreenPos.x - 0.5f) * AspectRatio + 0.5f, UVAndScreenPos.y);
-	}
 	
 	// Starburst
 	float2 StarburstUV = float2(

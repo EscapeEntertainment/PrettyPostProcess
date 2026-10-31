@@ -19,11 +19,21 @@ public class PrettyPostProcess : ModuleRules
 			new string[] {
 				// Needed to include the engine Lens Flare post-process header
 				EngineDirectory + "/Source/Runtime/Renderer/Private"
+            }
+			);
+
+        // TranslucenctPassResource.h moved to Internal in 5.6
+        if (Target.Version.MajorVersion == 5 && Target.Version.MinorVersion >= 6)
+        {
+			PrivateIncludePaths.AddRange(
+			new string[] {
+                EngineDirectory + "/Source/Runtime/Renderer/Internal"
 			}
 			);
-			
-		
-		PublicDependencyModuleNames.AddRange(
+		}
+
+
+        PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
 				// Needed for RenderGraph, PostProcess, Shaders
